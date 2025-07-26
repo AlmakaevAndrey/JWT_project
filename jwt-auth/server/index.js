@@ -18,31 +18,35 @@ const users = [
 let refreshTokensArray = [];
 
 const generateAccessToken = (user) => {
-    return jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: "15s" });
+    return jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: "5m" });
 };
 
 const generateRefreshToken = (user) => {
-    const token = jwt.sign(user, process.env.REFRESH_SECRET, { expiresIn: "7s" });
+    const token = jwt.sign(user, process.env.REFRESH_SECRET, { expiresIn: "5m" });
     refreshTokensArray.push(token);
     return token;
 }
 
 app.post("/login", (req, res) => {
-    const { username, password } = req.body;
-
-    const user = users.find(u => u.username === username && u.password === password);
-    if (!user) return res.status(401).json({ message: "Invalid data"});
-
-    const accessToken = generateAccessToken({ id: user.id });
-    const refreshToken = generateRefreshToken({ id: user.id });
-
-    res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
-    })
-
-    res.json({accessToken});
+    try {
+        const { username, password } = req.body;
+    
+        const user = users.find(u => u.username === username && u.password === password);
+        if (!user) return res.status(401).json({ message: "Invalid data"});
+    
+        const accessToken = generateAccessToken({ id: user.id });
+        const refreshToken = generateRefreshToken({ id: user.id });
+    
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+        })
+        res.json({accessToken});
+    } catch (error) {
+        console.error("Login error", error);
+        res.status(501).json({ message: "Internal server error" });
+    }
 })
 
 app.post("/refresh", (req, res) => {
