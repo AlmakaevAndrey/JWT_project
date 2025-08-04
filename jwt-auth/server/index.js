@@ -22,7 +22,7 @@ const generateAccessToken = (user) => {
 };
 
 const generateRefreshToken = (user) => {
-    const token = jwt.sign(user, process.env.REFRESH_SECRET, { expiresIn: "5m" });
+    const token = jwt.sign(user, process.env.REFRESH_SECRET, { expiresIn: "3d" });
     refreshTokensArray.push(token);
     return token;
 }
@@ -50,19 +50,33 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/refresh", (req, res) => {
-    const token = req.cookies.refreshToken;
-    if(!token || !refreshTokensArray.includes(token)) return res.sendStatus(403);
+    const oldToken = req.cookies.refreshToken;
+    if (!oldToken || !refreshTokensArray.includes(oldToken)) return res.sendStatus(403);
 
-    jwt.verify(token, process.env.REFRESH_SECRET, (err, user) => {
+    jwt.verify(oldToken, process.env.REFRESH_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
 
+        refreshTokensArray = refreshTokensArray.filter(t => t !== oldToken);
+
         const newAccessToken = generateAccessToken({ id: user.id });
+        const newRefreshToken = generateRefreshToken({ id: user.id });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: strict,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
         res.json({accessToken: newAccessToken});
-    })
-})
+    });
+});
 
 app.post("/logout", (req, res) => {
-    refreshTokensArray = refreshTokensArray.filter(t => t !== req.cookies.refreshToken);
+    const token = req.cookies.refreshToken;
+    if (!token) return res.sendStatus(204);
+
+    refreshTokensArray = refreshTokensArray.filter(t => t !== token);
     res.clearCookie("refreshToken");
     res.sendStatus(204);
 })

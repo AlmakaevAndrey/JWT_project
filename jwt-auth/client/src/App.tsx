@@ -36,7 +36,14 @@ function App() {
       if (err.response?.status === 403) {
         try {
           const refresh = await api.post('/refresh', {}, { withCredentials: true });
-          setToken(refresh.data.accessToken);
+          const newAccessToken = refresh.data.accessToken;
+          setToken(newAccessToken);
+          
+          const retryRes = await api.get("protected", {
+            headers: {Authorization: `Bearer ${newAccessToken}`},
+            withCredentials: true,
+          })
+          setMessage(retryRes.data.message)
         } catch (error) {
           console.error("Session error", error)
           alert("Session expired");
