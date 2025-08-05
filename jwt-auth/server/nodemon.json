@@ -1,0 +1,6 @@
+{
+  "exec": "node --loader ts-node/esm ./index.ts",
+  "watch": ["ю/"],
+  "ignore": ["C:/DumpStack.log.tmp", "**/*.test.ts", "node_modules", ".git"],
+  "ext": "ts"
+}

@@ -4,7 +4,7 @@ import { api } from './axios';
 import type { AxiosError } from 'axios';
 
 function App() {
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState<string>("");
   const [message, setMessage] = useState("");
 
   const login = async () => {
